@@ -29,6 +29,34 @@ export function Prediction() {
     fetchPrediction();
   }, [])
 
+  const onGeneratePrediction = async () => {
+    try {
+      const res = await fetch(
+        `https://callum231.pythonanywhere.com/forecast_all_year?year=${year}`
+      );
+
+      const data = await res.json();
+
+      // 🔥 format + rank
+      const formatted = data.results
+        .map((item: any) => ({
+          barangay: item.barangay,
+          prediction: item.prediction,
+          lambda: item.lambda,
+        }))
+        .sort((a: any, b: any) => b.predictedCases - a.predictedCases)
+        .map((item: any, index: number) => ({
+          rank: index + 1,
+          ...item,
+        }));
+      console.log(formatted)
+      setPredictions(formatted);
+
+    } catch (err) {
+      console.error("Error fetching predictions:", err);
+    }
+  };
+
 
   return (
     <div className="p-8">
@@ -59,7 +87,7 @@ export function Prediction() {
             />
           </div>
           <div className="flex items-end">
-            <Button className="w-full">
+            <Button onClick={onGeneratePrediction} className="w-full">
               <TrendingUp className="w-4 h-4 mr-2" />
               Generate Prediction
             </Button>

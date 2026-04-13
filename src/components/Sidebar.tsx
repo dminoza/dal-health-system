@@ -13,16 +13,6 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'prediction', label: 'Prediction', icon: TrendingUp },
     { id: 'history', label: 'History', icon: History },
-    { 
-      id: 'patients', 
-      label: 'Patients', 
-      icon: Users,
-      subItems: [
-        { id: 'patients', label: 'Patient Records' },
-        { id: 'consultation', label: 'Consultation' },
-      ]
-    },
-    { id: 'health-workers', label: 'Health Workers', icon: Stethoscope },
   ];
 
   return (
