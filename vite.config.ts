@@ -33,4 +33,26 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Maps — leaflet + react-leaflet
+          if (id.includes('leaflet')) return 'chunk-maps';
+          // Charts — recharts + dependencies
+          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return 'chunk-charts';
+          // MUI + Emotion
+          if (id.includes('@mui') || id.includes('@emotion')) return 'chunk-mui';
+          // Radix UI primitives
+          if (id.includes('@radix-ui')) return 'chunk-radix';
+          // React core
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) return 'chunk-react';
+          // React Router
+          if (id.includes('react-router')) return 'chunk-router';
+        },
+      },
+    },
+  },
 })
