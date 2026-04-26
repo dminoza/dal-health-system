@@ -1,7 +1,7 @@
 
-  # Health Dashboard Website
+  # Integrate OpenStreetMap
 
-  This is a code bundle for Health Dashboard Website. The original project is available at https://www.figma.com/design/E8aepEmn8Wm5xPuzLweZDW/Health-Dashboard-Website.
+  This is a code bundle for Integrate OpenStreetMap. The original project is available at https://www.figma.com/design/HHisjXOYYGGc1dIqmXHYBC/Integrate-OpenStreetMap.
 
   ## Running the code
 
