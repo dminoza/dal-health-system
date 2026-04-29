@@ -1,59 +1,51 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface BarangayData {
-  name: string;
-  cases: number;
-}
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { PredictionResult } from '../../hooks/usePrediction'
 
 interface PredictionBarChartProps {
-  data: BarangayData[];
+  data: PredictionResult[]
 }
 
 export function PredictionBarChart({ data }: PredictionBarChartProps) {
-  const sortedData = [...data].sort((a, b) => b.cases - a.cases);
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+        No prediction data yet.
+      </div>
+    )
+  }
+
+  const chartData = data.map((item) => ({
+    name: item.barangay,
+    cases: item.prediction,
+  }))
+
+  const maxCases = Math.max(...chartData.map((d) => d.cases))
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-bold text-gray-900">Predicted TB Cases Distribution</h2>
-      </div>
-      
-      <div className="flex-1 p-6">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={sortedData}
-            margin={{ top: 10, right: 30, left: 0, bottom: 60 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis
-              dataKey="name"
-              angle={-45}
-              textAnchor="end"
-              height={80}
-              tick={{ fontSize: 11, fill: '#6b7280' }}
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 60 }}>
+        <XAxis
+          dataKey="name"
+          tick={{ fontSize: 10, fill: '#6b7280' }}
+          angle={-45}
+          textAnchor="end"
+          interval={0}
+        />
+        <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} />
+        <Tooltip
+          formatter={(value) => [`${value} cases`, 'Predicted']}
+          labelStyle={{ fontWeight: 'bold' }}
+        />
+        <Bar dataKey="cases" radius={[4, 4, 0, 0]}>
+          {chartData.map((entry, index) => (
+            <Cell
+              key={index}
+              fill={entry.cases === maxCases ? '#7c3aed' : '#8b5cf6'}
+              fillOpacity={0.7 + (entry.cases / maxCases) * 0.3}
             />
-            <YAxis
-              tick={{ fontSize: 12, fill: '#6b7280' }}
-              label={{ value: 'Predicted Cases', angle: -90, position: 'insideLeft', style: { fill: '#374151' } }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              }}
-              labelStyle={{ color: '#111827', fontWeight: 600 }}
-            />
-            <Bar
-              dataKey="cases"
-              fill="#8b5cf6"
-              radius={[8, 8, 0, 0]}
-              name="Predicted Cases"
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  )
 }
