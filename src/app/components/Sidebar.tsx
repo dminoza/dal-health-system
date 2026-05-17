@@ -1,10 +1,11 @@
-import { LayoutDashboard, TrendingUp, History } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, History, Users } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
 
 const navigationItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Prediction', icon: TrendingUp, path: '/prediction' },
   { name: 'History', icon: History, path: '/history' },
+  { name: 'Patients', icon: Users, path: '/patients' },
 ];
 
 export function Sidebar() {

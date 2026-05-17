@@ -1,34 +1,36 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { useAuth } from '../context/AuthContext';
+import { supabase } from '../../utils/supabase';
 import { Eye, EyeOff, Activity, Shield } from 'lucide-react';
 
 export function LoginPage() {
-  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError]             = useState('');
+  const [loading, setLoading]         = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Simulate a short async delay for realism
-    await new Promise((r) => setTimeout(r, 600));
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    const result = login(email, password);
     setLoading(false);
 
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.error || 'Login failed.');
+    if (signInError) {
+      // Supabase returns "Invalid login credentials" for wrong email/password
+      setError(signInError.message);
+      return;
     }
+
+    navigate('/');
   };
 
   return (
@@ -43,6 +45,7 @@ export function LoginPage() {
       <div className="relative w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+
           {/* Header Band */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-8 text-center">
             <div className="flex items-center justify-center gap-2 mb-3">
@@ -119,7 +122,7 @@ export function LoginPage() {
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Signing in...
+                    Signing in…
                   </>
                 ) : (
                   'Sign In'
@@ -127,22 +130,28 @@ export function LoginPage() {
               </button>
             </form>
 
-            {/* Demo credentials hint */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-500">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/register')}
+                  className="text-blue-600 font-medium hover:underline"
+                >
+                  Register
+                </button>
+              </p>
+            </div>
+
+            {/* Security note — remove in production */}
             <div className="mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-3.5 h-3.5 text-gray-400" />
-                <p className="text-xs font-medium text-gray-500">Demo Accounts</p>
+                <p className="text-xs font-medium text-gray-500">Authorized Personnel Only</p>
               </div>
-              <div className="space-y-1.5 text-xs text-gray-500">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">maria.santos@cdo.ph</span>
-                  <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">health2024</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">admin@cdo.ph</span>
-                  <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">admin123</span>
-                </div>
-              </div>
+              <p className="text-xs text-gray-400">
+                Access is restricted to CDO City Health Office staff. Contact your administrator if you need an account.
+              </p>
             </div>
           </div>
         </div>

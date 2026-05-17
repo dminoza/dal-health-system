@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { supabase } from '../../utils/supabase';
+import type { Session } from '@supabase/supabase-js';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 export interface User {
   id: string;
@@ -10,71 +16,118 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => { success: boolean; error?: string };
-  logout: () => void;
+  session: Session | null;
   isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Build our app User shape from a Supabase session */
+function userFromSession(session: Session): User {
+  const meta = session.user.user_metadata ?? {};
+
+  const firstName = meta.first_name ?? '';
+  const lastName  = meta.last_name  ?? '';
+  const fullName  = meta.full_name  ?? `${firstName} ${lastName}`.trim();
+
+  // Avatar initials: first letter of first + last name, or first two of email
+  const initials =
+    firstName && lastName
+      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+      : (session.user.email ?? 'U').slice(0, 2).toUpperCase();
+
+  return {
+    id:     session.user.id,
+    name:   fullName || session.user.email!,
+    email:  session.user.email!,
+    role:   meta.role ?? 'Health Staff',
+    avatar: initials,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Context
+// ---------------------------------------------------------------------------
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Mock registered users
-const REGISTERED_USERS: Array<User & { password: string }> = [
-  {
-    id: '1',
-    name: 'Dr. Maria Santos',
-    email: 'maria.santos@cdo.ph',
-    password: 'health2024',
-    role: 'Health Officer',
-    avatar: 'MS',
-  },
-  {
-    id: '2',
-    name: 'Admin User',
-    email: 'admin@cdo.ph',
-    password: 'admin123',
-    role: 'Administrator',
-    avatar: 'AU',
-  },
-  {
-    id: '3',
-    name: 'Juan Dela Cruz',
-    email: 'juan.delacruz@cdo.ph',
-    password: 'password123',
-    role: 'Data Analyst',
-    avatar: 'JD',
-  },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = sessionStorage.getItem('cdo_tb_user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser]       = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // true until first session check
 
-  const login = (email: string, password: string): { success: boolean; error?: string } => {
-    const found = REGISTERED_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-    if (!found) {
-      return { success: false, error: 'Invalid email or password.' };
+  // -------------------------------------------------------------------------
+  // On mount: load existing session + subscribe to auth state changes
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    // Get current session (e.g. after page refresh)
+    supabase.auth.getSession().then(({ data }) => {
+      const s = data.session;
+      setSession(s);
+      setUser(s ? userFromSession(s) : null);
+      setLoading(false);
+    });
+
+    // Listen for sign-in / sign-out / token refresh
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      setUser(s ? userFromSession(s) : null);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Login
+  // -------------------------------------------------------------------------
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      return { success: false, error: error.message };
     }
-    const { password: _, ...userData } = found;
-    setUser(userData);
-    sessionStorage.setItem('cdo_tb_user', JSON.stringify(userData));
     return { success: true };
+    // session + user are set automatically by onAuthStateChange above
   };
 
-  const logout = () => {
-    setUser(null);
-    sessionStorage.removeItem('cdo_tb_user');
+  // -------------------------------------------------------------------------
+  // Logout
+  // -------------------------------------------------------------------------
+  const logout = async () => {
+    await supabase.auth.signOut();
+    // onAuthStateChange sets user + session to null automatically
   };
 
+  // -------------------------------------------------------------------------
+  // Provider
+  // -------------------------------------------------------------------------
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isAuthenticated: !!session,
+        loading,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export function useAuth() {
   const ctx = useContext(AuthContext);

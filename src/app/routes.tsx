@@ -7,6 +7,8 @@ const DashboardPage  = lazy(() => import("./pages/DashboardPage").then(m => ({ d
 const HistoryPage    = lazy(() => import("./pages/HistoryPage").then(m => ({ default: m.HistoryPage })));
 const PredictionPage = lazy(() => import("./pages/PredictionPage").then(m => ({ default: m.PredictionPage })));
 const LoginPage      = lazy(() => import("./pages/LoginPage").then(m => ({ default: m.LoginPage })));
+const RegisterPage   = lazy(() => import("./pages/RegisterPage").then(m => ({default: m.RegisterPage})));
+const PatientPage    = lazy(() => import("./pages/PatientPage").then(m => ({default: m.PatientPage})));
 
 function PageLoader() {
   return (
@@ -26,6 +28,10 @@ export const router = createBrowserRouter([
     element: <WithSuspense><LoginPage /></WithSuspense>,
   },
   {
+    path: "/register",
+    element: <WithSuspense><RegisterPage /></WithSuspense>
+  },
+  {
     path: "/",
     Component: ProtectedRoute,
     children: [
@@ -35,6 +41,7 @@ export const router = createBrowserRouter([
           { index: true,          element: <WithSuspense><DashboardPage /></WithSuspense> },
           { path: "history",      element: <WithSuspense><HistoryPage /></WithSuspense> },
           { path: "prediction",   element: <WithSuspense><PredictionPage /></WithSuspense> },
+          { path: "patients",      element: <WithSuspense><PatientPage /></WithSuspense> },
         ],
       },
     ],
